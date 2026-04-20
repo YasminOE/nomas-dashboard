@@ -11,14 +11,18 @@ export async function POST() {
     return NextResponse.json({ error: "Seed env vars not set" }, { status: 500 })
   }
 
-  const existing = await db.user.findUnique({ where: { email } })
+  const emailNorm = email.trim().toLowerCase()
+
+  const existing = await db.user.findFirst({
+    where: { email: { equals: emailNorm, mode: "insensitive" } },
+  })
   if (existing) {
     return NextResponse.json({ message: "Admin already exists" })
   }
 
   const passwordHash = await bcrypt.hash(password, 12)
   const user = await db.user.create({
-    data: { name, email, passwordHash, isAdmin: true },
+    data: { name: name.trim(), email: emailNorm, passwordHash, isAdmin: true },
     select: { id: true, name: true, email: true },
   })
 

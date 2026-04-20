@@ -2,8 +2,10 @@ import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
 import { db } from "@/lib/db"
+import { authConfig } from "@/lib/auth.config"
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  ...authConfig,
   providers: [
     Credentials({
       name: "credentials",
@@ -14,14 +16,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null
 
-        const user = await db.user.findUnique({
-          where: { email: credentials.email as string },
+        const email = (credentials.email as string).trim().toLowerCase()
+
+        const user = await db.user.findFirst({
+          where: {
+            email: { equals: email, mode: "insensitive" },
+          },
         })
 
         if (!user) return null
 
         const valid = await bcrypt.compare(
-          credentials.password as string,
+          (credentials.password as string).trim(),
           user.passwordHash
         )
 
@@ -36,24 +42,4 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     }),
   ],
-  callbacks: {
-    jwt({ token, user }) {
-      if (user) {
-        token.id = user.id
-        token.isAdmin = (user as { isAdmin: boolean }).isAdmin
-      }
-      return token
-    },
-    session({ session, token }) {
-      if (token) {
-        session.user.id = token.id as string
-        session.user.isAdmin = token.isAdmin as boolean
-      }
-      return session
-    },
-  },
-  pages: {
-    signIn: "/login",
-  },
-  session: { strategy: "jwt" },
 })
