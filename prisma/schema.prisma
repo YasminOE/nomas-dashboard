@@ -1,0 +1,50 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String          @id @default(cuid())
+  name         String
+  email        String          @unique
+  passwordHash String
+  isAdmin      Boolean         @default(false)
+  createdAt    DateTime        @default(now())
+  memberships  ProjectMember[]
+  activities   ActivityLog[]
+}
+
+model Project {
+  id            String          @id @default(cuid())
+  name          String
+  description   String?
+  status        String          @default("active")
+  driveFolderId String          @unique
+  createdAt     DateTime        @default(now())
+  members       ProjectMember[]
+  activities    ActivityLog[]
+}
+
+model ProjectMember {
+  id        String  @id @default(cuid())
+  projectId String
+  userId    String
+  role      String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  projectId String?
+  userId    String
+  action    String
+  createdAt DateTime @default(now())
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
