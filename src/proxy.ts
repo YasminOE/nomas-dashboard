@@ -4,7 +4,8 @@ import { NextResponse } from "next/server"
 
 export default NextAuth(authConfig).auth((req) => {
   const { pathname } = req.nextUrl
-  const isLoggedIn = !!req.auth
+  // Require a real user id — stale/partial JWTs must not count as logged in (avoids / ↔ /login loops).
+  const isLoggedIn = !!req.auth?.user?.id
 
   const isAuthPage = pathname.startsWith("/login") || pathname.startsWith("/register")
   const isDashboard = pathname === "/" || pathname.startsWith("/projects") || pathname.startsWith("/team")

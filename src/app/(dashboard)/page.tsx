@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth"
+import { redirect } from "next/navigation"
 import { db } from "@/lib/db"
 import { TopNav } from "@/components/layout/TopNav"
 import { KPICard } from "@/components/dashboard/KPICard"
@@ -11,7 +12,8 @@ import Link from "next/link"
 
 export default async function OverviewPage() {
   const session = await auth()
-  const userId = session!.user.id
+  const userId = session?.user?.id
+  if (!userId) redirect("/login")
 
   const projectIds = await getUserProjectIds(userId)
 

@@ -5,6 +5,8 @@ import type { NextAuthConfig } from "next-auth"
  * Keep DB/bcrypt in `auth.ts` only.
  */
 export const authConfig = {
+  /** Required on Vercel so cookies / host headers resolve correctly. */
+  trustHost: true,
   pages: {
     signIn: "/login",
   },
@@ -19,8 +21,11 @@ export const authConfig = {
     },
     session({ session, token }) {
       if (token) {
-        session.user.id = token.id as string
-        session.user.isAdmin = token.isAdmin as boolean
+        const id = (token.id as string | undefined) ?? (token.sub as string | undefined)
+        if (id) session.user.id = id
+        if (token.isAdmin !== undefined) {
+          session.user.isAdmin = token.isAdmin as boolean
+        }
       }
       return session
     },
